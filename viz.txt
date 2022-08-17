@@ -1,0 +1,262 @@
+# loading packages----=------
+
+library(tidyverse)
+library(here)
+library(janitor)
+library(skimr)
+library(ggbeeswarm)
+library(RColorBrewer)
+
+# get data from cleanbeaches_new to new data frame-------
+
+
+plotbeaches <- read_csv(here("data","cleanbeaches_new.csv"))
+
+
+# plotting beachbug level through point----------
+
+plotbeaches %>% 
+  ggplot(aes(x = year,y = beachbugs)) + 
+  geom_point() 
+
+
+# plotting beachbug level through jitter-------
+
+plotbeaches %>% 
+  ggplot(aes(x = year,y = beachbugs)) + 
+  geom_jitter() 
+
+
+# coerce year as factor rather than  double integer
+
+plotbeaches$year <- as.factor(plotbeaches$year)
+
+glimpse(plotbeaches)
+
+
+# beach bug level by site -----------
+
+plotbeaches %>% 
+  na.omit() %>% 
+  ggplot(aes(x = site,y = beachbugs,color = year)) + 
+  geom_jitter()+
+  coord_flip() 
+
+
+# useing facet_wrap function-------
+
+plotbeaches %>% 
+  na.omit() %>% 
+  ggplot(aes(x = year,y = beachbugs,color = site )) + 
+  geom_jitter()+
+  facet_wrap(~site)
+
+# ploting the site by filtering it--------
+
+plotbeaches%>% 
+  na.omit() %>% 
+  filter(site %in% c('Bondi Beach','Coogee Beach')) %>% 
+  filter (beachbugs < 1000) %>% 
+  ggplot(aes(x = year,y = beachbugs,color = site)) + 
+  geom_jitter()+
+  facet_wrap(~site)+
+  theme_dark()
+
+
+# boxplot and violin plot------
+
+plotbeaches %>% 
+  na.omit() %>% 
+  ggplot(aes(x = site,y = logbeachbugs)) + 
+  geom_boxplot() + 
+  coord_flip() 
+
+
+plotbeaches %>% 
+  na.omit() %>% 
+  ggplot(aes(x = year,y = logbeachbugs)) + 
+  geom_violin()
+
+   
+# violin plot for buggier site-----------
+
+plotbeaches %>% 
+  na.omit() %>% 
+  filter(buggier == "TRUE") %>% 
+  ggplot(aes(x = year,y = logbeachbugs,fill = site,color = site))+
+  geom_violin() +
+  facet_wrap(~site)+
+  theme_classic()
+
+
+# ploting histogram--------
+
+plotbeaches %>% 
+  na.omit() %>% 
+  filter (site == 'Clovelly Beach',
+          year == 2018,
+          logbeachbugs > 0) %>% 
+    ggplot(aes(x = logbeachbugs))+
+  geom_histogram(binwidth = 0.5)
+
+
+# combination of different plot---------
+
+plotbeaches %>% 
+  na.omit() %>% 
+  filter(buggier == 'TRUE') %>% 
+  ggplot(aes(x = site,y = logbeachbugs))+
+  geom_boxplot()+
+  geom_point(aes(color = year))+
+  coord_flip()
+
+
+plotbeaches %>% 
+  na.omit() %>% 
+  filter(site == 'Clovelly Beach') %>% 
+  ggplot(aes(x = year,y = logbeachbugs))+
+  geom_violin()+
+  geom_quasirandom(aes(color = buggier))
+
+
+# bar and cols plot--------
+
+plotbeaches %>% 
+  na.omit() %>% 
+  ggplot(aes(x = year)) +
+  geom_bar() +
+  facet_wrap(~site)
+
+# plotting col plot--------
+
+plotbeaches %>% 
+  na.omit() %>% 
+  ggplot(aes(x = year,y = beachbugs))+
+  geom_col()
+
+
+# calculating mena bugs & plot col graph-------
+
+plotbeaches %>% 
+  na.omit() %>%
+  group_by(year,site) %>% 
+  summarise(meanbug = mean(beachbugs)) %>% 
+  ggplot(aes(x = year,y = meanbug)) +
+  geom_col()+
+  facet_wrap(~site)
+
+# plotting error bar graph------
+
+plotbeaches %>% 
+  na.omit() %>% 
+  group_by(site) %>% 
+  summarise(mean = mean(beachbugs),
+            sd = sd(beachbugs),
+            n = n(),
+            stderr = sd/sqrt(n)) %>% 
+  ggplot(aes(x = site,y = mean))+
+  geom_col() + 
+  coord_flip() + 
+  geom_errorbar(aes(x = site,ymin = mean - stderr,ymax = mean + stderr))
+
+# importing weather data for scatter plot------
+
+raintemp <- read_csv(here("data","rain_temp_beachbugs.csv"))
+
+raintemp %>% 
+  na.omit() %>% 
+  filter(beachbugs >500) %>% 
+  ggplot(aes(x = rain_mm,y = beachbugs,color = temp_airport)) +
+  geom_point() + 
+  geom_smooth() +
+  theme_classic()  # setting theme for plot--------
+
+
+# useing color gradiant----------
+
+raintemp %>% 
+  na.omit() %>% 
+  filter(beachbugs >500) %>% 
+  ggplot(aes(x = rain_mm,y = beachbugs,color = temp_airport)) +
+  geom_point() + 
+  geom_smooth() +
+  theme_classic() + 
+  scale_color_gradient(low = 'blue',high = 'red')
+
+# now coloring through color brewer package-------
+
+
+raintemp %>% 
+  na.omit() %>% 
+  filter(beachbugs >500) %>% 
+  ggplot(aes(x = rain_mm,y = beachbugs,color = temp_airport)) +
+  geom_point() + 
+  geom_smooth() +
+  theme_classic() + 
+  scale_color_distiller(palette = 'RdYlBu')
+
+# adding labels to make plot more readable------
+
+raintemp %>% 
+  na.omit() %>% 
+  filter(beachbugs >500) %>% 
+  ggplot(aes(x = rain_mm,y = beachbugs,color = temp_airport)) +
+  geom_point() + 
+  geom_smooth() +
+  theme_classic() + 
+  scale_color_distiller(name = 'Temp (C)',palette = 'RdYlBu') + 
+  labs(title = 'mean beachbug level',
+       subtitle = 'beachbug more than 500',
+       caption = 'www.google.com',
+       x = 'Rain_fall (mm)',
+       y = "Beach_Bugs")
+  
+  
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+
+
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
