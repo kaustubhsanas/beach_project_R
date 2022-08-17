@@ -1,0 +1,186 @@
+# installing & loading package---------
+
+library(tidyverse)
+library(here)
+library(janitor)
+library(skimr)
+
+
+# now read data in data folder-----
+
+beaches <- read_csv(here("data","sydneybeaches.csv"))
+
+# exploring the data-------
+
+View(beaches)
+
+dim(beaches)
+
+head(beaches)
+
+tail(beaches)
+
+glimpse(beaches)
+
+summary(beaches)
+
+skim(beaches)
+
+
+# tidying columns--------
+
+
+select_all(beaches,toupper)
+select_all(beaches,tolower)
+
+cleanbeaches <- clean_names(beaches)
+
+cleanbeaches <- read_csv(here("data","sydneybeaches.csv"))
+
+cleanbeaches <- select_all(cleanbeaches,tolower)
+# selecting few variable-----
+
+
+select(cleanbeaches,site,council,beachbugs,everything())
+
+# which beach has a extreme level of bugs-------
+
+worstbeach <- cleanbeaches %>% 
+  arrange(desc(beachbugs))
+
+# using filter and arrange for coogee beach-------
+
+worstcoogee <- cleanbeaches %>% 
+  filter(site == "Coogee Beach") %>% 
+  arrange(desc(beachbugs))
+
+# coogee and bondi statistic-------
+
+coogee_bondi <- cleanbeaches %>% 
+  filter(site == "Coogee Beach" | site == "Bondi Beach") %>% 
+  group_by(site) %>% 
+  summarise(minbug = min(beachbugs,na.rm = TRUE),
+            maxbug = max(beachbugs,na.rm = TRUE),
+            meanbug = mean(beachbugs,na.rm = TRUE),
+            sdbug = sd(beachbugs,na.rm = TRUE))
+
+# statistical information of all site-------
+
+all_beaches <- cleanbeaches %>% 
+  group_by(site) %>% 
+  summarise(minbug = min(beachbugs,na.rm = TRUE),
+            maxbug = max(beachbugs,na.rm = TRUE),
+            meanbug = mean(beachbugs,na.rm = TRUE),
+            sdbug = sd(beachbugs,na.rm = TRUE))
+
+# lets compare council----------
+
+councilbysite <- cleanbeaches %>% 
+  group_by(council,site) %>% 
+  summarise(meanbug = mean(beachbugs,na.rm = TRUE),
+            medianbug = median(beachbugs,na.rm = TRUE))
+
+
+
+# let's create new variable(using a separate and unite function)-----
+
+
+glimpse(cleanbeaches)
+
+
+testdate <- cleanbeaches %>% 
+  
+  separate(date,c('day','month','year'),remove = FALSE)
+
+unite_colums <- cleanbeaches %>% 
+  
+  unite(council_site,council:site,remove = FALSE)
+  
+  
+# use mutate to transform beachbugs data-----
+
+
+cleanbeaches %>% mutate(logbeachbugs = log(beachbugs))
+  
+# use mutate to compute new numeric data------
+
+
+cleanbeaches %>% mutate(beachbugsdiff = beachbugs - lag(beachbugs))
+  
+
+# use mutate to new logical variable--------
+
+cleanbeaches %>% mutate(buggier = beachbugs > mean(beachbugs,na.rm = TRUE))
+
+
+# grouping all above function together-------
+
+cleanbeaches_new <- cleanbeaches %>% 
+  
+  separate(date,c('day','month','year'),remove = FALSE) %>% 
+  unite(council_site,council:site,remove = FALSE) %>%
+  mutate(logbeachbugs = log(beachbugs)) %>% 
+  mutate(beachbugsdiff = beachbugs - lag(beachbugs)) %>% 
+  mutate(buggier = beachbugs > mean(beachbugs,na.rm = TRUE))
+
+
+# baker data for pivot_longer & pivot_wider--------
+
+
+baker <- read_csv(here("data","bakers.csv"))
+
+
+baker_long <- baker %>% 
+  pivot_longer(names_to = 'spices',
+               values_to = 'correct',
+               cinnamon_1:nutmeg_3)
+
+# now beachbug data for pivot longer-------
+
+beachbug_long <- read_csv(here("data","beachbugs_wide.csv"))
+
+new_beachbug_long <- beachbug_long %>% 
+  pivot_longer(names_to = 'site',
+               values_to = 'beachbugs',
+               cols = -year)
+
+
+# back to wide data format--------
+
+new_beachbug_wide <- new_beachbug_long %>% 
+  pivot_wider(names_from = site,
+              values_from = beachbugs)
+
+# new frame wide data------
+
+frame_wide <- read_csv(here("data","frames_wide.csv"))
+
+new_frame_long <- frame_wide %>% 
+  pivot_longer(names_to = 'size','item',
+               values_to = 'reponse',
+               cols = large_item1:small_item7)
+
+
+# write back csv file to data folder-----
+
+write_csv(cleanbeaches_new,here("data","cleanbeaches_new.csv"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
